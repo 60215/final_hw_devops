@@ -1,0 +1,9 @@
+include:
+  - project: demo/templates
+    ref: main
+    file:
+      - pipelines/python_poetry_docker.yml
+
+Deploy Job:
+  rules:
+    -when: never

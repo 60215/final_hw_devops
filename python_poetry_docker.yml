@@ -1,0 +1,75 @@
+include:
+  - local: variables/main.yml
+  - local: rules/main.yml
+  - local: jobs/poetry.yml
+  - local: jobs/kaniko.yml
+  - local: jobs/dotenv_push.yml
+
+workflow:
+  rules:
+    - if:  == merge_request_event
+    - if:  && 
+      when: never
+    - if: 
+    - if: 
+
+Update Cache:
+  extends:
+    - .job__poetry
+    - .poetry_cache
+    - .rule__allow_failure
+  stage: .pre
+  needs: []
+  script:
+  rules:
+
+Run Tests:
+  extends:
+    - .job__poetry
+  stage: test
+  needs:
+    - job: Update Cache
+      artifacts: false
+  script:
+    - poetry run pytest --junitxml python.junit.xml
+  artifacts:
+    when: always
+    paths: [python.junit.xml]
+    reports:
+      junit: python.junit.xml
+  rules:
+
+Build Package:
+  extends:
+    - .job__poetry_build
+  stage: build
+  needs:
+    - job: Update Cache
+      artifacts: false
+  artifacts:
+    expire_in: 1h
+    paths: [dist]
+  rules:
+
+Publish Package:
+  extends:
+    - .job__kaniko_publish_image
+  stage: publish
+  needs:
+    - job: Build Package
+      artifacts: true
+    - job: Run Tests
+      artifacts: false
+      optional: true
+  rules:
+
+Deploy Job:
+  extends:
+    - .job__dotenv_push
+  stage: deploy
+  needs:
+    - job: Publish Package
+      artifacts: true
+  interruptible: false
+  rules:
+
